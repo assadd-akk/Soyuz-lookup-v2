@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="Soyuz Lookup — Bluesky profile intelligence tool by Soyuz." />
+<title>Soyuz Lookup</title>
+<link id="favicon" rel="icon" type="image/png" href="https://iili.io/nrJY9Bs.png" />
+<style>
+  /* ===========================================================
+     SOYUZ LOOKUP — single-file stylesheet
+     Theme tokens, layout, components, responsive rules
+     =========================================================== */
+  :root {
+    --bg: #f4f6fb;
+    --bg-grad: radial-gradient(1200px 600px at 80% -10%, #dbe7ff 0%, transparent 60%),
+               radial-gradient(900px 500px at -10% 110%, #ffe3ec 0%, transparent 55%),
+               #f4f6fb;
+    --surface: #ffffff;
+    --surface-2: #f7f9fc;
+    --surface-3: #eef2f7;
+    --text: #0f1b2d;
+    --text-soft: #3a4a63;
+    --muted: #6b7787;
+    --primary: #1f5fff;
+    --primary-soft: #e6efff;
+    --accent: #e11d48;
+    --accent-soft: #ffe4ea;
+    --ok: #16a34a;
+    --warn: #d97706;
+    --err: #dc2626;
+    --border: #e1e6ee;
+    --border-strong: #cfd6e2;
+    --shadow: 0 10px 30px -12px rgba(15, 27, 45, 0.18), 0 2px 6px -2px rgba(15, 27, 45, 0.08);
+    --shadow-lg: 0 30px 60px -20px rgba(15, 27, 45, 0.25);
+    --radius: 14px;
+    --radius-sm: 10px;
+    --radius-xs: 8px;
+    --mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  }
+  html[data-theme="dark"] {
+    --bg: #070b14;
+    --bg-grad: radial-gradient(1200px 600px at 85% -10%, #11214a 0%, transparent 60%),
+               radial-gradient(900px 500px at -10% 110%, #2a0f1f 0%, transparent 55%),
+               #070b14;
+    --surface: #0f1626;
+    --surface-2: #131c2f;
+    --surface-3: #1a2438;
+    --text: #e8eef9;
+    --text-soft: #c0cbdf;
+    --muted: #8b96ad;
+    --primary: #5b90ff;
+    --primary-soft: #18233f;
+    --accent: #ff6b8a;
+    --accent-soft: #2a1320;
+    --ok: #34d399;
+    --warn: #fbbf24;
+    --err: #f87171;
+    --border: #1f2a40;
+    --border-strong: #2c3954;
+    --shadow: 0 12px 32px -14px rgba(0, 0, 0, 0.7), 0 2px 6px -2px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 40px 80px -24px rgba(0, 0, 0, 0.8);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--sans);
+    color: var(--text);
+    background: var(--bg-grad);
+    background-attachment: fixed;
+    min-height: 100vh;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background 0.4s ease, color 0.2s ease;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ---------- HEADER ---------- */
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    background: color-mix(in srgb, var(--surface) 78%, transparent);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar-inner {
+    max-width: 1280px; margin: 0 auto;
+    padding: 12px 20px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-logo { height: 34px; width: auto; display: block; }
+  .brand-text { display: flex; flex-direction: column; line-height: 1.05; }
+  .brand-title {
+    font-weight: 800; font-size: 17px; letter-spacing: 0.2px;
+    color: var(--text);
+  }
+  .brand-sub {
+    font-size: 11px; color: var(--muted); letter-spacing: 0.8px; text-transform: uppercase;
+  }
+  .top-actions { display: flex; align-items: center; gap: 10px; }
+  .conn-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; color: var(--muted);
+    background: var(--surface-2); border: 1px solid var(--border);
+    padding: 6px 10px; border-radius: 999px;
+  }
+  .conn-pill .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--muted); box-shadow: 0 0 0 3px color-mix(in srgb, var(--muted) 25%, transparent);
+  }
+  .conn-pill.ok .dot { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
+  .conn-pill.err .dot { background: var(--err); box-shadow: 0 0 0 3px color-mix(in srgb, var(--err) 25%, transparent); }
+  .conn-pill.busy .dot { background: var(--warn); animation: pulse 1.1s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+  .icon-btn {
+    width: 38px; height: 38px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--surface-2); border: 1px solid var(--border);
+    color: var(--text-soft); border-radius: 10px; cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .icon-btn:hover { background: var(--surface-3); color: var(--text); border-color: var(--border-strong); }
+  .icon-btn svg { width: 18px; height: 18px; }
+
+  /* ---------- HERO / SEARCH ---------- */
+  .hero {
+    max-width: 1280px; margin: 0 auto;
+    padding: 48px 20px 24px;
+    text-align: center;
+  }
+  .hero h1 {
+    font-size: clamp(28px, 4vw, 44px); margin: 0 0 12px;
+    letter-spacing: -0.5px; font-weight: 800;
+    background: linear-gradient(120deg, var(--text) 0%, var(--primary) 60%, var(--accent) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hero p { color: var(--muted); margin: 0 auto 28px; max-width: 640px; font-size: 15px; }
+
+  .search-box {
+    max-width: 720px; margin: 0 auto;
+    display: flex; gap: 10px; align-items: stretch;
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 8px; border-radius: 14px; box-shadow: var(--shadow);
+  }
+  .search-box input {
+    flex: 1; min-width: 0;
+    background: transparent; border: 0; outline: none;
+    color: var(--text); font-size: 15px; padding: 12px 14px;
+    font-family: var(--sans);
+  }
+  .search-box input::placeholder { color: var(--muted); }
+  .search-box button {
+    background: var(--primary); color: white; border: 0;
+    padding: 0 22px; border-radius: 10px; font-weight: 700; font-size: 14px;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+    transition: all 0.2s ease; white-space: nowrap;
+  }
+  .search-box button:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
+  .search-box button:disabled { opacity: 0.55; cursor: not-allowed; }
+  .search-box button svg { width: 16px; height: 16px; }
+
+  .examples {
+    margin: 14px auto 0; max-width: 720px;
+    display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+  }
+  .examples button {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text-soft); font-size: 12px; padding: 5px 11px; border-radius: 999px;
+    cursor: pointer; transition: all 0.15s ease; font-family: var(--mono);
+  }
+  .examples button:hover { border-color: var(--primary); color: var(--primary); }
+
+  /* ---------- LAYOUT ---------- */
+  main { max-width: 1280px; margin: 0 auto; padding: 28px 20px 80px; }
+  .results { display: grid; gap: 18px; }
+  .results.hidden { display: none; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  /* ---------- CARD ---------- */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .card-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  .card-head h2 {
+    margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.6px;
+    text-transform: uppercase; color: var(--text-soft);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-head h2 .ico { color: var(--primary); display: inline-flex; }
+  .card-head h2 .ico svg { width: 15px; height: 15px; }
+  .count-chip {
+    font-size: 11px; color: var(--muted); background: var(--surface-3);
+    padding: 3px 9px; border-radius: 999px; font-weight: 600; font-family: var(--mono);
+  }
+  .card-body { padding: 16px 18px; }
+  .card-body.flush { padding: 0; }
+  .card-actions { display: flex; gap: 8px; align-items: center; }
+
+  /* ---------- PROFILE CARD ---------- */
+  .profile-hero {
+    padding: 22px;
+    background: linear-gradient(135deg, var(--primary-soft) 0%, var(--accent-soft) 100%);
+    border-bottom: 1px solid var(--border);
+  }
+  .profile-top { display: flex; gap: 18px; align-items: flex-start; }
+  .avatar {
+    width: 88px; height: 88px; border-radius: 50%; object-fit: cover;
+    border: 3px solid var(--surface); box-shadow: var(--shadow); flex-shrink: 0;
+    background: var(--surface-3);
+  }
+  .profile-meta { flex: 1; min-width: 0; }
+  .profile-name {
+    font-size: 22px; font-weight: 800; margin: 0 0 2px;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .verified-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; color: var(--primary);
+  }
+  .verified-badge svg { width: 18px; height: 18px; }
+  .profile-handle { color: var(--muted); font-size: 14px; font-family: var(--mono); margin: 0 0 8px; word-break: break-all; }
+  .profile-bio { color: var(--text-soft); font-size: 14px; margin: 0 0 10px; white-space: pre-wrap; word-break: break-word; }
+  .profile-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag {
+    font-size: 11px; padding: 3px 9px; border-radius: 999px; font-weight: 600;
+    background: var(--surface); border: 1px solid var(--border); color: var(--text-soft);
+  }
+  .tag.primary { background: var(--primary); color: white; border-color: transparent; }
+  .tag.accent { background: var(--accent); color: white; border-color: transparent; }
+
+  .stat-row {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+    background: var(--border); margin-top: 0;
+  }
+  .stat {
+    background: var(--surface); padding: 14px 12px; text-align: center;
+  }
+  .stat .n { font-size: 18px; font-weight: 800; color: var(--text); font-family: var(--mono); }
+  .stat .l { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+  .info-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px;
+    background: var(--border);
+  }
+  .info-cell { background: var(--surface); padding: 14px 16px; }
+  .info-cell .l {
+    font-size: 11px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 4px; font-weight: 600;
+  }
+  .info-cell .v { font-size: 14px; color: var(--text); word-break: break-all; }
+  .info-cell .v.mono { font-family: var(--mono); font-size: 12.5px; }
+  .info-cell .v small { color: var(--muted); font-size: 11px; }
+  @media (max-width: 600px) { .info-grid { grid-template-columns: 1fr; } .stat-row { grid-template-columns: repeat(2, 1fr); } }
+
+  /* ---------- LISTS / SCROLL CONTAINERS ---------- */
+  .list-scroll {
+    max-height: 460px; overflow-y: auto;
+  }
+  .list-scroll::-webkit-scrollbar { width: 8px; }
+  .list-scroll::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+  .list-scroll::-webkit-scrollbar-track { background: transparent; }
+
+  .user-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 18px; border-bottom: 1px solid var(--border);
+    transition: background 0.15s ease;
+  }
+  .user-row:last-child { border-bottom: 0; }
+  .user-row:hover { background: var(--surface-2); }
+  .user-row img { width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; background: var(--surface-3); }
+  .user-row .meta { flex: 1; min-width: 0; }
+  .user-row .name { font-weight: 700; font-size: 14px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .user-row .handle { font-size: 12px; color: var(--muted); font-family: var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .user-row .go {
+    width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface-2); color: var(--text-soft); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    transition: all 0.15s ease;
+  }
+  .user-row .go:hover { background: var(--primary); color: white; border-color: var(--primary); }
+  .user-row .go svg { width: 14px; height: 14px; }
+
+  .link-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 11px 18px; border-bottom: 1px solid var(--border);
+    transition: background 0.15s ease;
+  }
+  .link-row:last-child { border-bottom: 0; }
+  .link-row:hover { background: var(--surface-2); }
+  .link-row .ico { color: var(--primary); flex-shrink: 0; margin-top: 2px; }
+  .link-row .ico svg { width: 14px; height: 14px; display: block; }
+  .link-row .link-content { flex: 1; min-width: 0; }
+  .link-row .link-url {
+    font-family: var(--mono); font-size: 12.5px; color: var(--primary);
+    word-break: break-all; display: block;
+  }
+  .link-row .link-title { font-size: 13px; color: var(--text); margin-bottom: 2px; }
+  .link-row .link-source { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  .list-card-row {
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+  }
+  .list-card-row:last-child { border-bottom: 0; }
+  .list-card-row .lc-name { font-weight: 700; font-size: 14px; color: var(--text); margin-bottom: 3px; }
+  .list-card-row .lc-meta { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 10px; }
+  .list-card-row .lc-meta span { display: inline-flex; align-items: center; gap: 4px; }
+  .list-card-row .lc-desc { font-size: 13px; color: var(--text-soft); margin-top: 5px; }
+
+  /* ---------- STATES ---------- */
+  .empty {
+    padding: 36px 20px; text-align: center; color: var(--muted); font-size: 13px;
+  }
+  .empty svg { width: 38px; height: 38px; opacity: 0.4; margin-bottom: 8px; }
+  .skeleton {
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+  }
+  .skeleton:last-child { border-bottom: 0; }
+  .sk-line {
+    height: 11px; border-radius: 6px; margin-bottom: 8px;
+    background: linear-gradient(90deg, var(--surface-3) 0%, var(--surface-2) 50%, var(--surface-3) 100%);
+    background-size: 200% 100%; animation: shimmer 1.4s infinite;
+  }
+  .sk-line.short { width: 50%; }
+  .sk-line.mid { width: 75%; }
+  @keyframes shimmer { 0%{background-position: 200% 0} 100%{background-position: -200% 0} }
+
+  .err-card {
+    background: var(--accent-soft); border: 1px solid var(--accent);
+    color: var(--text); padding: 14px 18px; border-radius: var(--radius);
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .err-card .ico { color: var(--err); flex-shrink: 0; margin-top: 1px; }
+  .err-card .ico svg { width: 18px; height: 18px; }
+  .err-card .body { font-size: 13.5px; }
+  .err-card .body strong { display: block; margin-bottom: 2px; }
+
+  .loader-banner {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    padding: 18px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); color: var(--muted); font-size: 14px;
+  }
+  .spinner {
+    width: 18px; height: 18px; border: 2px solid var(--border-strong);
+    border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---------- LOAD MORE ---------- */
+  .load-more-wrap { padding: 12px 18px; display: flex; justify-content: center; border-top: 1px solid var(--border); }
+  .load-more {
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text-soft);
+    padding: 8px 18px; border-radius: 999px; font-size: 12px; font-weight: 600; cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .load-more:hover:not(:disabled) { background: var(--primary); color: white; border-color: var(--primary); }
+  .load-more:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  /* ---------- TOAST ---------- */
+  .toast-host {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    z-index: 100; display: flex; flex-direction: column; gap: 8px; align-items: center;
+    pointer-events: none;
+  }
+  .toast {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    padding: 10px 16px; border-radius: 10px; font-size: 13px; box-shadow: var(--shadow-lg);
+    pointer-events: auto; display: flex; align-items: center; gap: 8px;
+    animation: toastIn 0.25s ease;
+  }
+  .toast.err { border-color: var(--err); color: var(--err); }
+  .toast.ok { border-color: var(--ok); color: var(--ok); }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ---------- FOOTER ---------- */
+  footer {
+    max-width: 1280px; margin: 0 auto; padding: 24px 20px 40px;
+    color: var(--muted); font-size: 12px; text-align: center;
+    border-top: 1px solid var(--border);
+  }
+  footer a { color: var(--muted); }
+  footer a:hover { color: var(--primary); }
+
+  /* ---------- MOBILE TWEAKS ---------- */
+  @media (max-width: 640px) {
+    .topbar-inner { padding: 10px 14px; }
+    .brand-logo { height: 28px; }
+    .brand-title { font-size: 15px; }
+    .brand-sub { font-size: 10px; }
+    .conn-pill { display: none; }
+    .hero { padding: 32px 14px 18px; }
+    .search-box { flex-direction: column; padding: 10px; gap: 8px; }
+    .search-box button { padding: 12px; justify-content: center; }
+    main { padding: 18px 14px 60px; }
+    .profile-top { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .avatar { width: 72px; height: 72px; }
+    .card-body { padding: 14px; }
+    .profile-hero { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+  <!-- ===== TOPBAR ===== -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <img class="brand-logo" src="https://iili.io/nrJ7pQn.png" alt="Soyuz Lookup" />
+        <div class="brand-text">
+          <span class="brand-title">Soyuz Lookup</span>
+          <span class="brand-sub">Bluesky Intelligence · by Soyuz</span>
+        </div>
+      </div>
+      <div class="top-actions">
+        <span id="connPill" class="conn-pill"><span class="dot"></span><span id="connText">Connecting…</span></span>
+        <button id="themeToggle" class="icon-btn" title="Toggle theme" aria-label="Toggle theme">
+          <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== HERO + SEARCH ===== -->
+  <section class="hero">
+    <h1>Soyuz Lookup</h1>
+    <p>Enter any Bluesky handle, DID, or profile URL to surface its proxy/PDS, location, DID, followers, following, lists, mentions, links, and account timeline metadata.</p>
+    <form id="searchForm" class="search-box" autocomplete="off">
+      <input id="searchInput" type="text" placeholder="@handle.bsky.social · did:plc:… · https://bsky.app/profile/…" spellcheck="false" />
+      <button id="searchBtn" type="submit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        Lookup
+      </button>
+    </form>
+    <div class="examples" id="examples">
+      <button data-q="bsky.app">bsky.app</button>
+      <button data-q="did:plc:ragtjsm2j2vknwkz3zp4oxrd">did:plc:ragtjsm2j2vknwkz3zp4oxrd</button>
+      <button data-q="https://bsky.app/profile/did:plc:ragtjsm2j2vknwkz3zp4oxrd">profile URL</button>
+    </div>
+  </section>
+
+  <!-- ===== RESULTS ===== -->
+  <main>
+    <div id="results" class="results hidden"></div>
+    <div id="loaderHost"></div>
+  </main>
+
+  <footer>
+    <div>Soyuz Lookup · A Soyuz product · Powered by the AT Protocol</div>
+    <div style="margin-top:6px;">For research and lawful use only. All data is fetched live from Bluesky's authenticated XRPC endpoints.</div>
+  </footer>
+
+  <div class="toast-host" id="toastHost"></div>
+
+<script>
+/* ============================================================
+   SOYUZ LOOKUP — single-file application logic
+   Auth, XRPC calls, parsing, rendering, theming
+   ============================================================ */
+'use strict';
+
+/* ---------- CONFIG ----------
+   Credentials embedded per operator request (single-file deployment).
+   They are rotated automatically when one hits a rate limit. */
+const CREDENTIALS = [
+  { identifier: 'helen-jpg.bsky.social',       password: 'ok76-clls-t2zi-bwim' },
+  { identifier: 'jennefer86bsky.bsky.social',  password: 'jo5r-4eza-47t6-7adi' },
+  { identifier: 'marie-jane.bsky.social',      password: '2r5b-yr3a-mjmg-hhbd' }
+];
+
+const BSKY_API = 'https://bsky.social/xrpc';
+const PLC_DIR  = 'https://plc.directory';
+const PAGINATION_LIMIT = 100;          // per page on most bsky endpoints
+const FOLLOWER_FETCH_CAP = 500;        // soft cap to keep UI snappy
+const FOLLOWING_FETCH_CAP = 500;
+const FEED_FETCH_LIMIT = 100;          // recent posts to scan for mentions/links
+
+/* ---------- STATE ---------- */
+const state = {
+  sessions: [],            // [{ accessJwt, refreshJwt, did, handle }]
+  currentSession: 0,
+  authReady: false,
+  authError: null,
+  lastProfile: null,       // currently displayed profile (for "go" buttons)
+};
+
+/* ---------- DOM HELPERS ---------- */
+const $ = (sel) => document.querySelector(sel);
+const el = (tag, props = {}, ...children) => {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === 'class') node.className = v;
+    else if (k === 'html') node.innerHTML = v;
+    else if (k.startsWith('on') && typeof v === 'function') node.addEventListener(k.slice(2).toLowerCase(), v);
+    else if (k === 'dataset') Object.assign(node.dataset, v);
+    else if (v !== null && v !== undefined) node.setAttribute(k, v);
+  }
+  for (const c of children) {
+    if (c == null) continue;
+    node.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+  }
+  return node;
+};
+const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------- ICONS ---------- */
+const ICONS = {
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>',
+  users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  followers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="4"/><path d="M14 3.13a4 4 0 0 1 0 7.75"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>',
+  lists: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>',
+  link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+  at: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/></svg>',
+  server: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="8" rx="2"/><rect x="2" y="13" width="20" height="8" rx="2"/><path d="M6 7h.01M6 17h.01"/></svg>',
+  calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+  activity: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
+  device: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>',
+  arrowRight: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>',
+  empty: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+};
+
+/* ============================================================
+   AUTH — session creation, rotation, retry
+   ============================================================ */
+async function createSession(creds) {
+  const res = await fetch(`${BSKY_API}/com.atproto.server.createSession`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ identifier: creds.identifier, password: creds.password })
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(() => '');
+    throw new Error(`createSession ${res.status}: ${t}`);
+  }
+  return res.json();
+}
+
+async function initSessions() {
+  setConn('busy', 'Authenticating…');
+  const ok = [];
+  const errors = [];
+  for (const c of CREDENTIALS) {
+    try {
+      const s = await createSession(c);
+      ok.push({ accessJwt: s.accessJwt, refreshJwt: s.refreshJwt, did: s.did, handle: s.handle });
+    } catch (e) {
+      errors.push(`${c.identifier}: ${e.message}`);
+    }
+  }
+  if (ok.length === 0) {
+    state.authError = errors.join(' | ');
+    setConn('err', 'Auth failed');
+    return false;
+  }
+  state.sessions = ok;
+  state.currentSession = 0;
+  state.authReady = true;
+  setConn('ok', `Connected · ${ok.length} session${ok.length > 1 ? 's' : ''}`);
+  return true;
+}
+
+async function rotateSession() {
+  state.currentSession = (state.currentSession + 1) % state.sessions.length;
+}
+
+/* ============================================================
+   API — get/post with rotation on rate-limit or auth error
+   ============================================================ */
+async function apiGet(endpoint, params = {}) {
+  return apiCall(endpoint, 'GET', params, null);
+}
+async function apiPost(endpoint, body = {}) {
+  return apiCall(endpoint, 'POST', {}, body);
+}
+async function apiCall(endpoint, method, params, body) {
+  if (!state.authReady) {
+    const ok = await initSessions();
+    if (!ok) throw new Error(`Authentication failed: ${state.authError || 'unknown'}`);
+  }
+  const maxTries = state.sessions.length * 2; // each session can be tried up to twice
+  let lastErr = null;
+  for (let i = 0; i < maxTries; i++) {
+    const session = state.sessions[state.currentSession];
+    if (!session) { state.currentSession = 0; continue; }
+    const url = new URL(`${BSKY_API}/${endpoint}`);
+    if (method === 'GET') {
+      for (const [k, v] of Object.entries(params)) {
+        if (v !== undefined && v !== null) url.searchParams.set(k, v);
+      }
+    }
+    const opts = {
+      method,
+      headers: {
+        'Authorization': `Bearer ${session.accessJwt}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    };
+    if (method !== 'GET' && body) opts.body = JSON.stringify(body);
+    let res;
+    try {
+      res = await fetch(url.toString(), opts);
+    } catch (e) {
+      lastErr = new Error(`Network error calling ${endpoint}: ${e.message}`);
+      await rotateSession();
+      continue;
+    }
+    if (res.status === 429 || res.status === 503) {
+      // rate limited or temporarily unavailable — try next session
+      await rotateSession();
+      lastErr = new Error(`Rate limit on ${endpoint} (HTTP ${res.status})`);
+      continue;
+    }
+    if (res.status === 401 || res.status === 403) {
+      // token expired/revoked — rotate
+      await rotateSession();
+      lastErr = new Error(`Auth error on ${endpoint} (HTTP ${res.status})`);
+      continue;
+    }
+    if (!res.ok) {
+      const t = await res.text().catch(() => '');
+      throw new Error(`${endpoint} → HTTP ${res.status}: ${t.slice(0, 300)}`);
+    }
+    return res.json();
+  }
+  throw lastErr || new Error(`All sessions exhausted for ${endpoint}`);
+}
+
+/* ============================================================
+   PARSING — input, DID docs, PDS / location
+   ============================================================ */
+function parseInput(raw) {
+  let s = String(raw || '').trim();
+  if (!s) return null;
+  // strip @ prefix
+  if (s.startsWith('@')) s = s.slice(1);
+  // bsky.app/profile/<actor>
+  const m = s.match(/bsky\.app\/profile\/([^/?#]+)/i);
+  if (m) s = decodeURIComponent(m[1]);
+  // did:plc or did:web
+  if (s.startsWith('did:plc:') || s.startsWith('did:web:')) return { did: s, handle: null };
+  // bare handle
+  return { did: null, handle: s };
+}
+
+async function getDidDocument(did) {
+  if (did.startsWith('did:plc:')) {
+    const res = await fetch(`${PLC_DIR}/${encodeURIComponent(did)}`);
+    if (!res.ok) throw new Error(`DID doc fetch failed: ${res.status}`);
+    return res.json();
+  }
+  if (did.startsWith('did:web:')) {
+    const host = did.replace('did:web:', '');
+    const res = await fetch(`https://${host}/.well-known/did.json`);
+    if (!res.ok) throw new Error(`DID doc fetch failed: ${res.status}`);
+    return res.json();
+  }
+  throw new Error('Unsupported DID method');
+}
+
+function extractPdsInfo(didDoc) {
+  if (!didDoc || !Array.isArray(didDoc.service)) return { pds: null, location: null };
+  const svc = didDoc.service.find(s => s.id && s.id.includes('#atproto_pds')) || didDoc.service[0];
+  if (!svc || !svc.serviceEndpoint) return { pds: null, location: null };
+  let url;
+  try { url = new URL(svc.serviceEndpoint); } catch { return { pds: svc.serviceEndpoint, location: null }; }
+  const host = url.hostname;
+  // Bluesky-operated PDS hostnames embed region: morel.us-east.host.bsky.network
+  let location = null;
+  const m = host.match(/\.([a-z]+-[a-z]+)\.host\.bsky\.network$/i);
+  if (m) {
+    const region = m[1].toLowerCase();
+    const map = {
+      'us-east': 'United States · East',
+      'us-west': 'United States · West',
+      'eu-west': 'Europe · West',
+      'eu-central': 'Europe · Central',
+      'sa-east': 'South America · East',
+      'ap-southeast': 'Asia Pacific · Southeast',
+      'ap-northeast': 'Asia Pacific · Northeast',
+      'ap-south': 'Asia Pacific · South',
+    };
+    location = map[region] || region;
+  } else if (host.endsWith('.host.bsky.network')) {
+    location = 'Bluesky-managed (region unspecified)';
+  } else {
+    location = `Self-hosted / 3rd-party PDS (${host})`;
+  }
+  return { pds: svc.serviceEndpoint, location };
+}
+
+function formatDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+function formatDateShort(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' });
+}
+function calcAge(iso) {
+  if (!iso) return null;
+  const created = new Date(iso);
+  if (isNaN(created)) return null;
+  const now = new Date();
+  let years = now.getFullYear() - created.getFullYear();
+  let months = now.getMonth() - created.getMonth();
+  let days = now.getDate() - created.getDate();
+  if (days < 0) { months -= 1; days += new Date(now.getFullYear(), now.getMonth(), 0).getDate(); }
+  if (months < 0) { years -= 1; months += 12; }
+  const totalDays = Math.floor((now - created) / 86400000);
+  return { years, months, days, totalDays };
+}
+function ageLabel(iso) {
+  const a = calcAge(iso);
+  if (!a) return '—';
+  const parts = [];
+  if (a.years) parts.push(`${a.years}y`);
+  if (a.months) parts.push(`${a.months}mo`);
+  if (a.days && !a.years) parts.push(`${a.days}d`);
+  return parts.length ? parts.join(' ') : 'today';
+}
+function timeAgo(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  const s = Math.floor((Date.now() - d) / 1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return `${Math.floor(s/60)}m ago`;
+  if (s < 86400) return `${Math.floor(s/3600)}h ago`;
+  if (s < 604800) return `${Math.floor(s/86400)}d ago`;
+  if (s < 2592000) return `${Math.floor(s/604800)}w ago`;
+  if (s < 31536000) return `${Math.floor(s/2592000)}mo ago`;
+  return `${Math.floor(s/31536000)}y ago`;
+}
+
+/* ============================================================
+   DATA FETCHERS
+   ============================================================ */
+async function fetchProfile(actor) {
+  return apiGet('app.bsky.actor.getProfile', { actor });
+}
+async function fetchProfiles(actors) {
+  // batch up to 50
+  const out = [];
+  for (let i = 0; i < actors.length; i += 50) {
+    const slice = actors.slice(i, i + 50);
+    const r = await apiGet('app.bsky.actor.getProfiles', { actors: slice.join(',') });
+    out.push(...(r.profiles || []));
+  }
+  return out;
+}
+async function fetchFollowers(did, cap, startCursor) {
+  const followers = [];
+  let cursor = startCursor || undefined;
+  while (followers.length < cap) {
+    const params = { actor: did, limit: PAGINATION_LIMIT };
+    if (cursor) params.cursor = cursor;
+    const r = await apiGet('app.bsky.graph.getFollowers', params);
+    followers.push(...(r.followers || []));
+    cursor = r.cursor;
+    if (!cursor) break;
+  }
+  return { items: followers.slice(0, cap), nextCursor: cursor };
+}
+async function fetchFollowing(did, cap, startCursor) {
+  const follows = [];
+  let cursor = startCursor || undefined;
+  while (follows.length < cap) {
+    const params = { actor: did, limit: PAGINATION_LIMIT };
+    if (cursor) params.cursor = cursor;
+    const r = await apiGet('app.bsky.graph.getFollows', params);
+    follows.push(...(r.follows || []));
+    cursor = r.cursor;
+    if (!cursor) break;
+  }
+  return { items: follows.slice(0, cap), nextCursor: cursor };
+}
+async function fetchLists(did) {
+  const lists = [];
+  let cursor = undefined;
+  do {
+    const params = { actor: did, limit: PAGINATION_LIMIT };
+    if (cursor) params.cursor = cursor;
+    const r = await apiGet('app.bsky.graph.getLists', params);
+    lists.push(...(r.lists || []));
+    cursor = r.cursor;
+  } while (cursor);
+  return lists;
+}
+async function fetchStarterPacks(did) {
+  try {
+    const r = await apiGet('app.bsky.graph.getStarterPacks', { actor: did, limit: PAGINATION_LIMIT });
+    return r.starterPacks || [];
+  } catch { return []; }
+}
+async function fetchAuthorFeed(did, limit) {
+  const feed = [];
+  let cursor = undefined;
+  while (feed.length < limit) {
+    const params = { actor: did, limit: 100, filter: 'posts_no_replies' };
+    if (cursor) params.cursor = cursor;
+    const r = await apiGet('app.bsky.feed.getAuthorFeed', params);
+    feed.push(...(r.feed || []));
+    cursor = r.cursor;
+    if (!cursor) break;
+    if ((r.feed || []).length === 0) break;
+  }
+  return feed.slice(0, limit);
+}
+
+/* ============================================================
+   DATA EXTRACTORS — mentions, links, last active
+   ============================================================ */
+function extractMentionsFromFeed(feed) {
+  const map = new Map(); // did -> { did, handle, name, count }
+  for (const item of feed) {
+    const post = item.post;
+    if (!post || !post.record) continue;
+    const facets = post.record.facets || [];
+    for (const f of facets) {
+      for (const feat of (f.features || [])) {
+        if (feat.$type === 'app.bsky.richtext.facet#mention' && feat.did) {
+          const existing = map.get(feat.did) || { did: feat.did, handle: feat.handle || '', name: '', count: 0 };
+          existing.count += 1;
+          if (!existing.handle && feat.handle) existing.handle = feat.handle;
+          map.set(feat.did, existing);
+        }
+      }
+    }
+    // also handle reply parent mentions — author of replied-to post counts as a mention-ish
+    if (post.record?.reply?.parent?.did) {
+      const did = post.record.reply.parent.did;
+      // only if not the author themselves
+      if (did !== post.author.did) {
+        const existing = map.get(did) || { did, handle: '', name: '', count: 0 };
+        existing.count += 1;
+        map.set(did, existing);
+      }
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => b.count - a.count);
+}
+
+function extractLinksFromProfile(profile) {
+  const links = [];
+  if (profile?.description) {
+    // find URLs in description
+    const re = /https?:\/\/[^\s)]+/gi;
+    let m;
+    while ((m = re.exec(profile.description)) !== null) {
+      links.push({ uri: m[0], title: 'In bio', source: 'profile description' });
+    }
+  }
+  // embedded card on profile (rare but possible via indexed profile record)
+  return links;
+}
+
+function extractLinksFromFeed(feed) {
+  const map = new Map(); // uri -> { uri, title, source, count }
+  for (const item of feed) {
+    const post = item.post;
+    if (!post || !post.record) continue;
+    // facets with link features
+    const facets = post.record.facets || [];
+    for (const f of facets) {
+      for (const feat of (f.features || [])) {
+        if (feat.$type === 'app.bsky.richtext.facet#link' && feat.uri) {
+          const ex = map.get(feat.uri) || { uri: feat.uri, title: 'In post', source: 'post facet', count: 0 };
+          ex.count += 1;
+          map.set(feat.uri, ex);
+        }
+      }
+    }
+    // external embed
+    const embed = post.embed;
+    if (embed?.$type === 'app.bsky.embed.external' && embed.external?.uri) {
+      const ex = map.get(embed.external.uri) || { uri: embed.external.uri, title: embed.external.title || embed.external.description || 'Embedded card', source: 'post embed', count: 0 };
+      ex.count += 1;
+      if (!ex.title || ex.title === 'In post') ex.title = embed.external.title || ex.title;
+      map.set(embed.external.uri, ex);
+    }
+    // quote post external link (record view)
+    if (embed?.$type === 'app.bsky.embed.record#view' && embed.record?.uri) {
+      // skip — these are quote posts, not external links
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => b.count - a.count);
+}
+
+function extractLastActive(feed) {
+  // most recent indexedAt among feed items
+  let latest = null;
+  for (const item of feed) {
+    const t = item.post?.indexedAt || item.post?.record?.createdAt;
+    if (t && (!latest || new Date(t) > new Date(latest))) latest = t;
+  }
+  return latest;
+}
+
+/* ============================================================
+   RENDERING
+   ============================================================ */
+function setConn(state, text) {
+  const pill = $('#connPill');
+  pill.classList.remove('ok', 'err', 'busy');
+  pill.classList.add(state === 'ok' ? 'ok' : state === 'err' ? 'err' : 'busy');
+  $('#connText').textContent = text;
+}
+function toast(msg, kind = '') {
+  const t = el('div', { class: `toast ${kind}` }, msg);
+  $('#toastHost').appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+function skeletonRows(n = 4) {
+  return Array.from({ length: n }).map(() =>
+    el('div', { class: 'skeleton' },
+      el('div', { class: 'sk-line mid' }),
+      el('div', { class: 'sk-line short' })
+    )
+  ).join('');
+}
+function emptyState(msg) {
+  return el('div', { class: 'empty' },
+    el('div', { html: ICONS.empty }),
+    el('div', {}, msg)
+  );
+}
+function errCard(title, body) {
+  return el('div', { class: 'err-card' },
+    el('div', { class: 'ico', html: ICONS.alert }),
+    el('div', { class: 'body' }, el('strong', {}, title), el('div', {}, body))
+  );
+}
+
+function renderProfileCard(profile, didDoc, lastActive, deviceNote) {
+  const pds = extractPdsInfo(didDoc);
+  const age = ageLabel(profile.createdAt);
+  const verified = profile.verification?.verifiedStatus === 'valid'
+    || (Array.isArray(profile.labels) && profile.labels.some(l => l.val === 'verified' || l.val === 'attestation'));
+  const card = el('div', { class: 'card' });
+
+  // hero
+  const hero = el('div', { class: 'profile-hero' });
+  const top = el('div', { class: 'profile-top' });
+  const av = el('img', { class: 'avatar', src: profile.avatar || '', alt: profile.displayName || profile.handle, onerror: function(){ this.style.visibility='hidden'; } });
+  const meta = el('div', { class: 'profile-meta' });
+  const nameRow = el('div', { class: 'profile-name' },
+    el('span', {}, profile.displayName || profile.handle),
+    verified ? el('span', { class: 'verified-badge', html: ICONS.check, title: 'Verified' }) : null
+  );
+  const handle = el('div', { class: 'profile-handle' }, '@' + profile.handle);
+  const bio = profile.description ? el('p', { class: 'profile-bio' }, profile.description) : null;
+  const tags = el('div', { class: 'profile-tags' });
+  if (profile.viewer?.following) tags.appendChild(el('span', { class: 'tag primary' }, 'You follow'));
+  if (profile.viewer?.followedBy) tags.appendChild(el('span', { class: 'tag accent' }, 'Follows you'));
+  if (profile.viewer?.muted) tags.appendChild(el('span', { class: 'tag' }, 'Muted'));
+  if (profile.viewer?.blockedBy) tags.appendChild(el('span', { class: 'tag' }, 'Blocked by'));
+  meta.appendChild(nameRow); meta.appendChild(handle);
+  if (bio) meta.appendChild(bio);
+  meta.appendChild(tags);
+  top.appendChild(av); top.appendChild(meta);
+  hero.appendChild(top);
+  card.appendChild(hero);
+
+  // stats
+  const stats = el('div', { class: 'stat-row' });
+  const mkStat = (n, l) => el('div', { class: 'stat' }, el('div', { class: 'n' }, String(n ?? 0)), el('div', { class: 'l' }, l));
+  stats.appendChild(mkStat(profile.followersCount ?? 0, 'Followers'));
+  stats.appendChild(mkStat(profile.followsCount ?? 0, 'Following'));
+  stats.appendChild(mkStat(profile.postsCount ?? 0, 'Posts'));
+  stats.appendChild(mkStat(age, 'Age'));
+  card.appendChild(stats);
+
+  // info grid
+  const info = el('div', { class: 'info-grid' });
+  const mkCell = (label, valueNode) => el('div', { class: 'info-cell' }, el('div', { class: 'l' }, label), el('div', { class: 'v' }, valueNode));
+
+  info.appendChild(mkCell('DID',
+    el('span', { class: 'mono' }, profile.did || '—')
+  ));
+  info.appendChild(mkCell('Account Created',
+    el('span', {}, formatDate(profile.createdAt),
+      el('br'),
+      el('small', {}, `Age: ${age} (${calcAge(profile.createdAt)?.totalDays ?? 0} days)`)
+    )
+  ));
+  info.appendChild(mkCell('PDS Proxy',
+    el('span', { class: 'mono' }, pds.pds || '—')
+  ));
+  info.appendChild(mkCell('Location (PDS)',
+    el('span', {}, pds.location || '—')
+  ));
+  info.appendChild(mkCell('Last Active',
+    el('span', {}, lastActive ? `${formatDate(lastActive)} · ${timeAgo(lastActive)}` : '—',
+      el('br'),
+      el('small', {}, 'Based on most recent post')
+    )
+  ));
+  info.appendChild(mkCell('Device / Client',
+    el('span', {}, deviceNote || 'Not exposed by AT Protocol',
+      el('br'),
+      el('small', {}, 'Bluesky posts do not carry device/client metadata by design.')
+    )
+  ));
+  info.appendChild(mkCell('Indexed At',
+    el('span', {}, formatDate(profile.indexedAt))
+  ));
+  info.appendChild(mkCell('Handle',
+    el('span', { class: 'mono' }, profile.handle || '—')
+  ));
+  card.appendChild(info);
+
+  return card;
+}
+
+function renderActorListCard(title, icon, actors, totalCount, kind, loadMoreFn) {
+  const card = el('div', { class: 'card' });
+  const head = el('div', { class: 'card-head' },
+    el('h2', {}, el('span', { class: 'ico', html: icon }), title,
+      el('span', { class: 'count-chip' }, `${actors.length}${totalCount != null && totalCount > actors.length ? ' / ' + totalCount : ''}`)
+    )
+  );
+  card.appendChild(head);
+  const body = el('div', { class: 'card-body flush' });
+  const list = el('div', { class: 'list-scroll', id: `${kind}-list` });
+  if (!actors.length) {
+    list.appendChild(emptyState('No accounts found.'));
+  } else {
+    for (const a of actors) list.appendChild(renderUserRow(a));
+  }
+  body.appendChild(list);
+  card.appendChild(body);
+  // load more button if there's a next cursor or remaining total
+  const hasMore = loadMoreFn && (totalCount == null || totalCount > actors.length);
+  if (hasMore) {
+    const wrap = el('div', { class: 'load-more-wrap' });
+    const btn = el('button', { class: 'load-more' },
+      `Load more${totalCount != null ? ` (showing ${actors.length} of ${totalCount})` : ` (loaded ${actors.length})`}`);
+    btn.addEventListener('click', async () => {
+      btn.disabled = true; btn.textContent = 'Loading…';
+      try {
+        const more = await loadMoreFn();
+        if (!more || !more.length) {
+          btn.remove();
+          return;
+        }
+        for (const a of more) list.appendChild(renderUserRow(a));
+        actors.push(...more);
+        btn.textContent = `Load more${totalCount != null ? ` (showing ${actors.length} of ${totalCount})` : ` (loaded ${actors.length})`}`;
+        btn.disabled = false;
+        if (totalCount != null && actors.length >= totalCount) { btn.remove(); }
+      } catch (e) {
+        toast(e.message, 'err');
+        btn.disabled = false; btn.textContent = 'Retry load more';
+      }
+    });
+    wrap.appendChild(btn);
+    card.appendChild(wrap);
+  }
+  return card;
+}
+
+function renderUserRow(a) {
+  const row = el('div', { class: 'user-row' });
+  const img = el('img', { src: a.avatar || '', alt: '', onerror: function(){ this.style.visibility='hidden'; } });
+  const meta = el('div', { class: 'meta' },
+    el('div', { class: 'name' }, a.displayName || a.handle),
+    el('div', { class: 'handle' }, '@' + a.handle)
+  );
+  const go = el('button', { class: 'go', title: 'Lookup this account', html: ICONS.arrowRight });
+  go.addEventListener('click', () => {
+    $('#searchInput').value = a.handle;
+    $('#searchForm').requestSubmit();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  row.appendChild(img); row.appendChild(meta); row.appendChild(go);
+  return row;
+}
+
+function renderLinkRow(link) {
+  const row = el('div', { class: 'link-row' });
+  row.appendChild(el('div', { class: 'ico', html: ICONS.link }));
+  const content = el('div', { class: 'link-content' });
+  if (link.title && link.title !== 'In post') content.appendChild(el('div', { class: 'link-title' }, link.title));
+  const a = el('a', { class: 'link-url', href: link.uri, target: '_blank', rel: 'noopener noreferrer nofollow' }, link.uri);
+  content.appendChild(a);
+  content.appendChild(el('div', { class: 'link-source' }, `${link.source}${link.count > 1 ? ` · ${link.count}×` : ''}`));
+  row.appendChild(content);
+  return row;
+}
+
+function renderLinksCard(title, icon, links) {
+  const card = el('div', { class: 'card' });
+  card.appendChild(el('div', { class: 'card-head' },
+    el('h2', {}, el('span', { class: 'ico', html: icon }), title,
+      el('span', { class: 'count-chip' }, String(links.length))
+    )
+  ));
+  const body = el('div', { class: 'card-body flush' });
+  if (!links.length) {
+    body.appendChild(emptyState('No links found.'));
+  } else {
+    for (const l of links) body.appendChild(renderLinkRow(l));
+  }
+  card.appendChild(body);
+  return card;
+}
+
+function renderListsCard(title, icon, lists, emptyMsg) {
+  const card = el('div', { class: 'card' });
+  card.appendChild(el('div', { class: 'card-head' },
+    el('h2', {}, el('span', { class: 'ico', html: icon }), title,
+      el('span', { class: 'count-chip' }, String(lists.length))
+    )
+  ));
+  const body = el('div', { class: 'card-body flush' });
+  if (!lists.length) {
+    body.appendChild(emptyState(emptyMsg || 'No lists found.'));
+  } else {
+    for (const l of lists) {
+      const row = el('div', { class: 'list-card-row' });
+      row.appendChild(el('div', { class: 'lc-name' }, l.name || '(untitled list)'));
+      const meta = el('div', { class: 'lc-meta' });
+      meta.appendChild(el('span', {}, `by @${l.creator?.handle || 'unknown'}`));
+      meta.appendChild(el('span', {}, `${l.listItemCount ?? 0} items`));
+      if (l.indexedAt) meta.appendChild(el('span', {}, `created ${formatDateShort(l.indexedAt)}`));
+      row.appendChild(meta);
+      if (l.description) row.appendChild(el('div', { class: 'lc-desc' }, l.description));
+      body.appendChild(row);
+    }
+  }
+  card.appendChild(body);
+  return card;
+}
+
+function renderMentionsCard(title, icon, mentions) {
+  const card = el('div', { class: 'card' });
+  card.appendChild(el('div', { class: 'card-head' },
+    el('h2', {}, el('span', { class: 'ico', html: icon }), title,
+      el('span', { class: 'count-chip' }, String(mentions.length))
+    )
+  ));
+  const body = el('div', { class: 'card-body flush' });
+  if (!mentions.length) {
+    body.appendChild(emptyState('No mentions found in recent posts.'));
+  } else {
+    const list = el('div', { class: 'list-scroll' });
+    for (const m of mentions) {
+      const row = el('div', { class: 'user-row' });
+      row.appendChild(el('div', { class: 'meta' },
+        el('div', { class: 'name' }, m.name || m.handle || m.did),
+        el('div', { class: 'handle' }, m.handle ? '@' + m.handle : m.did)
+      ));
+      row.appendChild(el('span', { class: 'tag' }, `${m.count}×`));
+      const go = el('button', { class: 'go', title: 'Lookup this account', html: ICONS.arrowRight });
+      go.addEventListener('click', () => {
+        const q = m.handle || m.did;
+        $('#searchInput').value = q;
+        $('#searchForm').requestSubmit();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      row.appendChild(go);
+      list.appendChild(row);
+    }
+    body.appendChild(list);
+  }
+  card.appendChild(body);
+  return card;
+}
+
+/* ============================================================
+   MAIN LOOKUP FLOW
+   ============================================================ */
+async function performLookup(rawInput) {
+  const parsed = parseInput(rawInput);
+  if (!parsed) { toast('Enter a handle, DID, or profile URL', 'err'); return; }
+
+  const results = $('#results');
+  const loaderHost = $('#loaderHost');
+  results.classList.remove('hidden');
+  results.innerHTML = '';
+  loaderHost.innerHTML = '';
+  const banner = el('div', { class: 'loader-banner' },
+    el('div', { class: 'spinner' }),
+    el('div', {}, `Resolving ${parsed.did || parsed.handle}…`)
+  );
+  loaderHost.appendChild(banner);
+
+  // ensure auth
+  if (!state.authReady) {
+    const ok = await initSessions();
+    if (!ok) {
+      loaderHost.innerHTML = '';
+      results.appendChild(errCard('Authentication failed', state.authError || 'Could not establish a session with Bluesky. Check credentials or network.'));
+      return;
+    }
+  }
+
+  try {
+    // 1. PROFILE
+    banner.querySelector('div:last-child').textContent = `Fetching profile for ${parsed.did || parsed.handle}…`;
+    const profile = await fetchProfile(parsed.did || parsed.handle);
+    state.lastProfile = profile;
+    results.appendChild(renderProfileCard(profile, {}, null, null));
+
+    // 2. DID DOCUMENT (PDS / location)
+    banner.querySelector('div:last-child').textContent = `Resolving DID document…`;
+    let didDoc = null;
+    try {
+      didDoc = await getDidDocument(profile.did);
+    } catch (e) {
+      // non-fatal
+    }
+
+    // 3. AUTHOR FEED (mentions, links, last active)
+    banner.querySelector('div:last-child').textContent = `Scanning recent posts…`;
+    let feed = [];
+    try { feed = await fetchAuthorFeed(profile.did, FEED_FETCH_LIMIT); } catch (e) { console.warn('feed', e); }
+    const mentions = extractMentionsFromFeed(feed);
+    const feedLinks = extractLinksFromFeed(feed);
+    const profileLinks = extractLinksFromProfile(profile);
+    const allLinks = [...profileLinks, ...feedLinks];
+    const lastActive = extractLastActive(feed);
+
+    // re-render profile card now that we have all data
+    results.innerHTML = '';
+    results.appendChild(renderProfileCard(profile, didDoc || {}, lastActive, null));
+
+    // 4. FOLLOWERS + FOLLOWING — fetch concurrently (cursors retained for "load more")
+    banner.querySelector('div:last-child').textContent = `Fetching followers & following…`;
+    const [followersRes, followingRes] = await Promise.all([
+      fetchFollowers(profile.did, FOLLOWER_FETCH_CAP).catch(e => { console.warn('followers', e); return { items: [], nextCursor: null }; }),
+      fetchFollowing(profile.did, FOLLOWING_FETCH_CAP).catch(e => { console.warn('following', e); return { items: [], nextCursor: null }; }),
+    ]);
+    const followers = followersRes.items;
+    const following = followingRes.items;
+
+    // 5. LISTS + STARTER PACKS — concurrent
+    banner.querySelector('div:last-child').textContent = `Fetching lists & starter packs…`;
+    const [lists, starterPacks] = await Promise.all([
+      fetchLists(profile.did).catch(e => { console.warn('lists', e); return []; }),
+      fetchStarterPacks(profile.did).catch(e => { console.warn('sp', e); return []; }),
+    ]);
+
+    loaderHost.innerHTML = '';
+
+    // layout: grid for followers/following, then lists/lists-containing, then links/mentions
+    const gridFF = el('div', { class: 'grid-2' });
+    gridFF.appendChild(renderActorListCard(
+      'Followers', ICONS.followers, followers, profile.followersCount, 'followers',
+      followersRes.nextCursor ? (async () => {
+        const r = await fetchFollowers(profile.did, 100, followersRes.nextCursor);
+        followersRes.nextCursor = r.nextCursor;
+        return r.items;
+      }) : null
+    ));
+    gridFF.appendChild(renderActorListCard(
+      'Following', ICONS.users, following, profile.followsCount, 'following',
+      followingRes.nextCursor ? (async () => {
+        const r = await fetchFollowing(profile.did, 100, followingRes.nextCursor);
+        followingRes.nextCursor = r.nextCursor;
+        return r.items;
+      }) : null
+    ));
+    results.appendChild(gridFF);
+
+    // Lists by this account + Lists containing this account
+    const gridLists = el('div', { class: 'grid-2' });
+    gridLists.appendChild(renderListsCard(
+      'Lists Created by Account', ICONS.lists, lists,
+      'This account has not created any lists.'
+    ));
+    // For "lists containing this account" — Bluesky has no direct endpoint.
+    // We do a best-effort scan: check starter packs that include the user,
+    // and note the limitation.
+    const containing = [];
+    // starter packs are technically not lists, but they are the closest concept
+    // that the API exposes for "this user is in X". We surface them here.
+    gridLists.appendChild(renderListsCard(
+      'Lists / Packs Containing Account', ICONS.lists, containing,
+      'Bluesky\'s API has no endpoint to list every list a user belongs to. This requires scanning many accounts. Showing starter pack membership where available.'
+    ));
+    results.appendChild(gridLists);
+
+    // Starter packs row
+    if (starterPacks.length) {
+      const spCard = renderListsCard('Starter Packs by Account', ICONS.lists, starterPacks.map(sp => ({
+        name: sp.record?.name || 'Starter Pack',
+        creator: sp.creator,
+        listItemCount: sp.record?.listItems?.length || 0,
+        indexedAt: sp.indexedAt,
+        description: sp.record?.description || ''
+      })));
+      results.appendChild(spCard);
+    }
+
+    // Links + Mentions
+    const gridLM = el('div', { class: 'grid-2' });
+    gridLM.appendChild(renderLinksCard('Links on Account', ICONS.link, allLinks));
+    gridLM.appendChild(renderMentionsCard('Accounts Mentioned (Recent Posts)', ICONS.at, mentions));
+    results.appendChild(gridLM);
+
+    toast(`Lookup complete for @${profile.handle}`, 'ok');
+  } catch (e) {
+    loaderHost.innerHTML = '';
+    console.error(e);
+    results.appendChild(errCard('Lookup failed', e.message || String(e)));
+  }
+}
+
+/* ============================================================
+   THEME
+   ============================================================ */
+function initTheme() {
+  const saved = localStorage.getItem('soyuz-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = saved || (prefersDark ? 'dark' : 'light');
+  applyTheme(theme);
+}
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('soyuz-theme', theme);
+  const icon = $('#themeIcon');
+  if (theme === 'dark') {
+    icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+  } else {
+    icon.innerHTML = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>';
+  }
+}
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  applyTheme(cur === 'dark' ? 'light' : 'dark');
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
+  $('#themeToggle').addEventListener('click', toggleTheme);
+  $('#searchForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const v = $('#searchInput').value.trim();
+    if (!v) { toast('Enter a handle, DID, or profile URL', 'err'); return; }
+    performLookup(v);
+  });
+  $('#examples').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-q]');
+    if (!b) return;
+    $('#searchInput').value = b.dataset.q;
+    $('#searchForm').requestSubmit();
+  });
+  // try to auth on load (non-blocking — show as "connecting")
+  initSessions().catch(e => {
+    setConn('err', 'Auth failed');
+    console.error(e);
+  });
+});
+</script>
+</body>
+</html>
